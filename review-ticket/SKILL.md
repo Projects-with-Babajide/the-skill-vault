@@ -8,6 +8,11 @@ Validate an implementation ticket against the project specs before work begins. 
 
 Invoke with an issue identifier: `/review-ticket ORU-7`
 
+Optional flag: `/review-ticket ORU-7 --fix`
+
+- **Without `--fix`:** Audit-only mode. Run the 21-check checklist, present findings, and append a review addendum to the ticket. Does not modify the ticket description.
+- **With `--fix`:** Audit-and-fix mode. Run the checklist. If any checks fail, research the codebase, rewrite the ticket description to pass all checks, then re-verify. The original ticket goal and scope are preserved — only gaps are filled.
+
 If no identifier is provided, ask the user which ticket to review.
 
 ---
@@ -33,6 +38,8 @@ Extract and hold these values for use throughout the skill:
 - **Canonical utility locations** — all three paths (Canonical Utility Locations section)
 - **Architecture examples** (Architecture Examples section)
 - **File structure spec reference** (File Structure Spec Reference section)
+
+Also parse the arguments to determine whether `--fix` mode is active. Hold this as a boolean `fix_mode` for the remainder of the skill.
 
 ---
 
@@ -75,6 +82,8 @@ After fetching, scan the description for an existing `## Review` block (a sectio
 - If no prior review is found: set `prior_review` to null.
 
 Use `prior_review` as additional context during the checklist in Step 4. Prior findings can inform the current review — note whether issues from a prior review have been addressed or persist.
+
+Hold the current description (excluding any prior review block) as `core_description`. This is the content that Step 7 preserves in audit-only mode, or that Step 6b replaces in fix mode.
 
 ---
 
@@ -180,6 +189,14 @@ This also applies to `Field()` constraint parameters — if a canonical location
 2. **Implementation note code is verified against the installed SDK.** Use Step 3b results. Code written from memory without verification is a Fail.
 
 For any **Flag** or **Fail**, note the issue and suggested fix — these go in the addendum, not in the checklist table.
+
+**After the checklist:** If `fix_mode` is active AND there are any Flags or Fails, proceed to Step 5b (fix path). Otherwise, proceed to Step 5 (audit path).
+
+---
+
+# AUDIT PATH (default — no `--fix` flag)
+
+Steps 5 through 8 run when `fix_mode` is false.
 
 ---
 
@@ -292,14 +309,175 @@ Branch: <branch-name>
 
 ---
 
-## Rules
+# FIX PATH (`--fix` flag active)
 
-- The addendum is always appended — never replace or modify the core ticket content. When a prior review exists, strip only the prior review block (the `\n\n---\n\n` separator that precedes it and everything after) before appending the new one. Core ticket content is always preserved. There is exactly one review block per ticket at all times.
+Steps 5b through 8b run when `fix_mode` is true AND the checklist produced Flags or Fails.
+
+If `fix_mode` is true but all 21 checks passed, skip to Step 7b directly (publish passing review, no rewrite needed).
+
+---
+
+## Step 5b: Deep Codebase Research
+
+This is the critical step. Every change to the ticket description must be grounded in code that was actually read — never written from memory.
+
+### 5b-i. Identify ticket type and required sections
+
+Detect the ticket type from the description (`**Type:** Implementation | Fix | Ops/Chore`). If no type line is present, infer from the ticket labels and title:
+- Label "Bug" or title contains "fix" → **Fix**
+- Label "Feature" or title contains "add", "create", "implement" → **Implementation**
+- Otherwise → ask the user
+
+**Required sections by type:**
+
+| Section | Implementation | Fix | Ops/Chore |
+|---------|:-:|:-:|:-:|
+| Context | Y | Y | Y |
+| Inputs | Y | Y | Y |
+| Deliverables | Y | Y | Y |
+| Implementation Notes | Y | Y | Y |
+| Acceptance Criteria | Y | Y | Y |
+| Unit Tests | Y | Y | - |
+| Manual Verification Steps | - | - | Y |
+| References | Y | Y | optional |
+
+**Fix tickets additionally require:** Unit Tests must open with a `**Regression:**` category.
+
+### 5b-ii. Read every source file referenced by the ticket
+
+For each file path in the Deliverables (existing or implied), read the full file. Record:
+- Current imports, function signatures, class structure
+- What the ticket wants to change and where the change fits
+- Any helpers, constants, or patterns already in use at that location
+
+### 5b-iii. Trace dependencies
+
+For each change the ticket describes:
+- What modules, models, or functions does the implementation need to import?
+- Do those exist? Are they exported from the expected location?
+- Are there existing functions that already do the same thing (potential duplication)?
+- What is the correct test file name? (Verify — do not guess.)
+
+### 5b-iv. Check canonical utilities
+
+Search the **Canonical Utility Locations** from config for any validators, constants, or helpers relevant to the ticket's changes.
+
+### 5b-v. Check for pattern-wide changes
+
+If the ticket replaces or removes a pattern across files, grep for it and record every hit — each must appear in the Deliverables.
+
+### 5b-vi. Resolve implementation ambiguities
+
+Identify questions that an implementer would need answered. For each one, find the answer in the code. Common ambiguities:
+- Which function signature or model field to use (read the model definition)
+- Whether to reuse an existing helper or write a new one (read the helper, compare scope)
+- How a dependency is wired (read the wiring/harness code)
+- What version/value to use for a field (read the model constraints)
+
+---
+
+## Step 6b: Rewrite the Ticket Description
+
+Using research from Step 5b, construct a complete ticket description with all required sections.
+
+### General rules
+- Preserve the original Context intent — do not change what the ticket is trying to do
+- Every file path must be verified against the actual codebase (correct name, correct location)
+- Every implementation detail must be grounded in code read in Step 5b
+- Use only canonical terminology from the spec documents
+- Add a scope boundary statement ("Does NOT change...")
+- The ticket type line (`**Type:** ...`) must be the first line of the description
+- Ordering notes (e.g., "Implement BEFORE ...") come immediately after the type line
+
+### Section-specific rules
+
+**Context:** Keep the original reasoning. For Fix tickets, ensure root cause is stated. Add "what depends on this" if missing.
+
+**Inputs:** List every direct dependency by ticket ID. Reference the specific deliverable from each dependency.
+
+**Deliverables:** List every file that will be created or modified, with a one-line description. Test files are always listed. Use verified file paths from Step 5b — if a test file has a different name than expected, use the real name.
+
+**Implementation Notes:** Address:
+- Exactly which functions/classes to modify and how
+- Key design decisions with rationale grounded in code constraints
+- What NOT to do and why
+- New imports needed
+- Anything that would otherwise require the implementer to ask a question
+
+**Acceptance Criteria:** Numbered, pass/fail testable. No subjective language. Include edge cases.
+
+**Unit Tests (Implementation/Fix):** Explicit test names grouped by category. For Fix tickets, open with `**Regression:**`. Map every AC to at least one test. Include error/edge case tests.
+
+**Manual Verification Steps (Ops/Chore):** Numbered, executable commands.
+
+**References:** Specific spec sections, not whole documents. Include relevant source file locations.
+
+### Present the rewrite to the user
+
+Show a summary of changes:
+```
+**Sections added:** <list>
+**Sections modified:** <list>
+**Key decisions resolved:** <list of implementation ambiguities resolved>
+**File paths corrected:** <list, if any>
+```
+
+Ask: "Update the ticket with this rewritten description?"
+
+**Wait for explicit approval before proceeding.** Do not call `save_issue` until the user confirms.
+
+---
+
+## Step 7b: Re-verify and Publish
+
+1. Re-run the 21-check checklist against the rewritten description. All checks should now pass. If any still fail, flag them to the user and ask whether to proceed or iterate.
+
+2. Construct the review addendum (same format as Step 7's addendum) reflecting the post-rewrite checklist results.
+
+3. Call `save_issue` with `id` set to the ticket identifier and `description` set to: rewritten description + `\n\n---\n\n` + review addendum.
+
+   If a `prior_review` existed in the original description, it is naturally replaced since the entire description is being rewritten.
+
+---
+
+## Step 8b: Report to User
+
+Show a compact summary:
+
+```
+**<TICKET-ID> — <title>**
+Verdict: Good to go (after fix)
+Results: <N> Pass · <N> Flag · <N> Fail (before fix) → 21 Pass (after fix)
+
+Sections added: <count>
+Key decisions resolved: <count>
+File paths corrected: <count>
+
+Ticket rewritten and review appended.
+Branch: <branch-name>
+```
+
+---
+
+# Rules (apply to both paths)
+
 - The checklist table shows only Pass/Flag/Fail — no notes column.
 - Flags and fails get detail in the Flags section, not in the table.
 - Resolve all open questions with the user before publishing.
-- Do NOT modify the ticket description during the review phase — only append the addendum in Step 7.
-- **Never call `update_issue` when there are flags or fails without first completing Step 6.** User approval is required before the issue tracker is touched.
+- **Never call `save_issue` or `update_issue` without user approval** — in audit mode, approval is required when there are flags/fails; in fix mode, approval is always required before rewriting.
 - The user may change the wording of any proposed fix or dismiss any issue entirely. Honor both without argument.
 - If the issue description contains images, view them with `extract_images`.
 - Check comments for decisions that supersede the description.
+
+### Fix-mode specific rules
+
+- NEVER write implementation notes from memory — every technical detail must come from reading actual source files in Step 5b.
+- NEVER guess file paths — verify against the codebase. If a file doesn't exist, note it.
+- NEVER invent acceptance criteria that contradict the original ticket intent.
+- Preserve the original ticket's goal and scope — only fill gaps, don't expand scope.
+- If research reveals that the ticket's approach is fundamentally flawed (e.g., the function it plans to modify doesn't exist), flag this to the user instead of silently rewriting.
+
+### Audit-mode specific rules
+
+- The addendum is always appended — never replace or modify the core ticket content. When a prior review exists, strip only the prior review block (the `\n\n---\n\n` separator that precedes it and everything after) before appending the new one. Core ticket content is always preserved. There is exactly one review block per ticket at all times.
+- Do NOT modify the ticket description during the review phase — only append the addendum in Step 7.
