@@ -33,8 +33,10 @@ After reading, offer to:
 ## Send a Message
 
 ```
-link-pulse whatsapp send "<chat name>" --message "<text>"
+link-pulse whatsapp send '<chat name>' --message '<text>'
 ```
+
+**IMPORTANT:** Always use single quotes for both `<chat name>` and `<text>` to avoid bash escaping issues (e.g., `!` becoming `\!` in double quotes).
 
 **CONSENT REQUIRED — NEVER SKIP:**
 - ALWAYS show the full drafted message to the user and wait for explicit approval before running the send command.
