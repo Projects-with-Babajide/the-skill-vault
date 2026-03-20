@@ -34,8 +34,10 @@ If the user asks to read messages from a specific person:
 link-pulse messages send "<thread-id>" --message "<text>"
 ```
 
-**Important:**
-- Always draft the message and show it to the user for approval before sending.
+**CONSENT REQUIRED — NEVER SKIP:**
+- ALWAYS show the drafted message to the user and wait for explicit approval before running the send command.
+- Do NOT send even if the user previously described the message content — always confirm at the moment of sending.
+- Only proceed after the user says yes, confirms, or approves. Treat any ambiguity as a no.
 - LinkedIn's compose box uses Shift+Enter for line breaks. Avoid multi-line messages when possible, or keep them on a single line. Newline characters may render as literal `\n` in the message.
 - To reply to a specific person, first list conversations to find their thread ID.
 
@@ -43,5 +45,5 @@ link-pulse messages send "<thread-id>" --message "<text>"
 
 1. List messages: find the thread ID by participant name
 2. Read the thread: understand the conversation context
-3. Draft a reply: show it to the user
-4. Send on approval
+3. Draft a reply: show it to the user and explicitly ask "Shall I send this?"
+4. Send ONLY after user confirms

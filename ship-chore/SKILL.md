@@ -27,6 +27,7 @@ test -f .claude/skill-config.md || echo "CONFIG_MISSING"
 - **Linear team name** and **Linear project name** (Project Identity section)
 - **Base branch** (Project Identity section)
 - **Branch naming convention** (Branch Naming Convention section)
+- **Deployment** section (optional) — if present, extract: Health check URL, Health check expected status, Deploy timeout, Rollback on failure, and any Deployment status tools (List services tool, List deployments tool, Get logs tool, Services to monitor). If the section is absent, set `deployment_configured` to false and skip all deployment steps later.
 
 ---
 
@@ -165,19 +166,109 @@ Ask: **"Should I apply this fix?"** Wait for confirmation before touching any co
 
 ---
 
-## Step 8: Merge and Mark Done
+## Step 8: Merge PR
 
-Merge the PR:
+After all CI checks pass, merge **without** deleting the branch:
 
 ```
-gh pr merge <pr-number> --merge --delete-branch
+gh pr merge <pr-number> --merge
 ```
 
-Mark the ticket as Done:
+Do NOT pass `--delete-branch`. The branch stays alive until deployment is verified (Step 8b) or, if no deployment is configured, until the end of this step.
+
+**If the Deployment section exists in `skill-config.md`:** proceed to Step 8b. Do NOT delete the branch or mark the ticket yet.
+
+**If no Deployment section exists:** delete the branch, mark the ticket as Done, and proceed to the Final Summary:
+
+```
+git push origin --delete <branch-name>
+git branch -d <branch-name>
+```
+
+### Mark the ticket as Done
+
 1. Fetch the issue: use `get_issue` with the ticket identifier.
 2. Find the "Done" state: use `list_issue_statuses` with the team from the issue.
 3. Use `update_issue` with `state: Done`.
 4. Confirm to the user: > "<ticket_id> marked as Done."
+
+Then provide the Final Summary.
+
+---
+
+## Step 8b: Verify Deployment (only when Deployment section exists in config)
+
+This step runs only when the **Deployment** section is present in `skill-config.md`. It verifies the merged code deploys successfully before cleaning up.
+
+### 1. Wait for deploy to trigger
+
+After merge, wait **30 seconds** for the platform's auto-deploy to pick up the new commit.
+
+### 2. Check deployment status via configured tools
+
+If the config includes a **Deployment status tools** subsection, use the listed tools to monitor deployment progress before falling through to the health check.
+
+1. If a **List services tool** is configured, call it with the provided parameters to discover service IDs for each service in **Services to monitor**.
+2. If a **List deployments tool** is configured, call it per service to find the most recent deployment (started after the merge timestamp).
+3. Poll every **30 seconds** until all deployments reach a terminal state (success or failure), or the **Deploy timeout** is reached.
+4. Report status changes:
+   > `"Deploy: <service> — <status> (<elapsed>)"`
+5. If any deployment fails and a **Get logs tool** is configured, call it for the failed service to retrieve recent logs. Present the logs to the user (see "Deployment failed" below). Do NOT proceed to health check.
+6. If all deployments succeed, proceed to the health check (step 3).
+
+If no deployment status tools are configured, skip straight to the health check.
+
+### 3. Verify health check
+
+The **Health check URL** is the final confirmation. Even if the status tools report success, the health check must pass.
+
+- Make an HTTP GET request to the **Health check URL** using `curl` via Bash.
+- Expect the **Health check expected status** (default 200).
+- **Retry logic:** after the first successful status code, retry 2 more times with 10-second intervals. All 3 must return the expected status to guard against rolling deploy blips.
+- If the health check has not passed after **Deploy timeout**, treat it as a failure.
+- Report each attempt:
+  > `"Health check: <url> returned <status> (<elapsed>)"`
+
+### 4. Interpret results
+
+**Deployment and health check both pass:**
+1. Report success:
+   > "Deployment verified: health check at `<url>` passed."
+2. Delete the branch:
+   ```
+   git push origin --delete <branch-name>
+   git branch -d <branch-name>
+   ```
+3. Mark the ticket as Done (same logic as Step 8), then proceed to the Final Summary.
+
+**Deployment or health check failed:**
+1. If a **Get logs tool** is configured and logs were not already fetched, call it for each service in **Services to monitor**.
+2. Present the failure to the user:
+   ```
+   ## Deployment Failed
+
+   **Failed service(s):** <service names, or "health check only">
+   **Health check:** <url> returned <actual status> (expected <expected status>)
+   **Elapsed:** <time since merge>
+
+   ### Logs
+   <logs from configured tool, or "No logs tool configured">
+
+   ### What was preserved
+   - Branch `<branch-name>` has NOT been deleted
+   - Ticket has NOT been marked as Done
+
+   ### Suggested next steps
+   - Check the logs above for the root cause
+   - Push a follow-up fix to the same branch, or investigate on the platform directly
+   ```
+3. Do NOT delete the branch. Do NOT mark the ticket as Done.
+4. If **Rollback on failure** is `yes`: offer to trigger a rollback. If `no`: just flag the issue.
+5. Ask:
+   > "Deployment failed. Branch preserved for follow-up. Would you like to investigate, push a fix, or stop here?"
+
+**Health check returns unexpected response shape (e.g., 200 but empty body):**
+- Treat as a pass if the status code matches. The skill checks status codes, not response bodies.
 
 ---
 
@@ -187,11 +278,12 @@ Mark the ticket as Done:
 ## Ship Chore Summary
 
 - **Ticket:** <ticket-id> — <title>
-- **Branch:** <branch-name>
+- **Branch:** <branch-name> (deleted | preserved — see deployment)
 - **PR:** <url>
 - **CI:** passed (<n> checks)
 - **Merged:** yes
-- **Ticket:** marked Done
+- **Deployment:** Verified | Failed | Skipped (no config)
+- **Ticket:** <ticket-id> marked Done (or "Not marked — deployment failed")
 
 ### Committed
 - `<file-path>` — <what changed>

@@ -12,8 +12,10 @@ Create posts or comments on LinkedIn using the `link-pulse` CLI.
 link-pulse post create --text "<post text>"
 ```
 
-**Important:**
-- Always draft the post and show it to the user for approval before publishing.
+**CONSENT REQUIRED — NEVER SKIP:**
+- ALWAYS show the drafted post to the user and wait for explicit approval before publishing.
+- Do NOT publish even if the user described the content — always confirm at the moment of posting.
+- Only proceed after the user says yes, confirms, or approves. Treat any ambiguity as a no.
 - This uses the official LinkedIn API (not browser automation), so it's reliable.
 - Keep posts authentic to the user's voice — don't make them sound like AI slop.
 
@@ -25,13 +27,14 @@ link-pulse post comment "<post-urn>" --text "<comment text>"
 
 The post URN looks like `urn:li:ugcPost:1234567890` or `urn:li:share:1234567890`. You can get it from feed or search results.
 
-**Important:**
-- Always draft the comment and show it to the user for approval before posting.
+**CONSENT REQUIRED — NEVER SKIP:**
+- ALWAYS show the drafted comment to the user and explicitly ask "Shall I post this?" before running the command.
+- Only proceed after the user confirms.
 
 ## Workflow: React to Feed Content
 
 1. Use `/linkedin-feed` to read the feed
 2. User picks a post to engage with
 3. Draft a thoughtful comment (not generic — reference specific points from the post)
-4. Show draft to user
-5. Post on approval
+4. Show draft to user and ask "Shall I post this?"
+5. Post ONLY after user confirms

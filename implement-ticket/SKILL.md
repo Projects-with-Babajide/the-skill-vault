@@ -46,9 +46,26 @@ Extract and hold these values for use throughout the skill:
 > Stop.
 
 **If the addendum verdict is `Needs revision`:**
-> "The review for `<ticket_id>` is marked **Needs revision**. Resolve the Required Changes listed in the ticket before implementing."
-> Show the Required Changes from the addendum.
-> Stop.
+
+Display the Required Changes from the addendum:
+> "The review for `<ticket_id>` is marked **Needs revision**. The following changes are required before implementing:"
+> (list every item under Required Changes verbatim)
+
+Then ask the user:
+> "Have all the required changes listed above been applied to the ticket in Linear? Reply **yes** to confirm you've fixed them, or **no** to stop."
+
+**If the user replies `no`:** Stop.
+
+**If the user replies `yes`:**
+1. Re-fetch the ticket with `get_issue` to get the latest ticket body.
+2. Present a brief summary of what changed in the ticket relative to the required changes, then ask:
+   > "Do the updated ticket contents look good to go? Reply **yes** to mark the verdict as Good to go and proceed with implementation, or **no** to stop and review further."
+3. **If the user replies `no`:** Stop.
+4. **If the user replies `yes`:**
+   - Update the ticket description in Linear: find the `**Verdict:** Needs revision` line in the `## Review` section and replace it with `**Verdict:** Good to go`. Use `save_issue` with the full updated description body.
+   - Confirm to the user:
+     > "Ticket `<ticket_id>` review verdict updated to **Good to go**. Proceeding with implementation."
+   - Continue to Step 2 (do not stop).
 
 **If verdict is `Good to go` or `Minor flags`:**
 - Read the full ticket description. All implementation decisions flow from the ticket's own sections:
@@ -221,7 +238,8 @@ Run `/test-and-fix` to execute the unit tests and fix any failures.
 - **Never modify files outside the Deliverables list.** If another file needs a small change to make this ticket work, flag it rather than silently editing it.
 - **Never skip an AC** — verify every single one. If you can't verify it (e.g., it depends on a missing input), say so explicitly.
 - **Never weaken an AC** — if an AC says "X must raise ValidationError", make sure it does.
-- **If the review addendum has `Needs revision` verdict**, do not proceed with implementation. Send the user back to fix the ticket.
+- **If the review addendum has `Needs revision` verdict**, show the Required Changes, ask the user to confirm fixes have been applied, re-fetch the ticket, ask for final confirmation, update the verdict to "Good to go" in Linear, then proceed — do not stop unless the user says `no`.
 - **If an input is missing**, stop and report it. Do not attempt to implement the dependency inline.
 - **Do not run the full test suite** — only run the test file(s) listed in Deliverables during AC verification.
+- **Never commit** — do not run `git commit` or `git add` at any point. The user decides when to commit.
 - Follow all architecture rules and code quality conventions from config at all times.
