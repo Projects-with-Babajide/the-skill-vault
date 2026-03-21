@@ -190,6 +190,24 @@ This also applies to `Field()` constraint parameters — if a canonical location
 1. **Version constraint is pinned to a major version.** Must use a bounded constraint (e.g., `>=4.0,<5.0`), not an open floor. Open floor is a Fail.
 2. **Implementation note code is verified against the installed SDK.** Use Step 3b results. Code written from memory without verification is a Fail.
 
+**Check 22 — Blast radius documented:** Applies to tickets that change an API contract (request/response shape, status code, endpoint URL), modify a shared model or port interface, or remove/rename a public function or class. Evaluate these sub-checks:
+
+1. **External callers identified.** The ticket must list every external system, client library, or application that calls the changed interface. Use codebase knowledge (CLAUDE.md, spec docs) and grep for usages of the changed function/endpoint/model within the source root. If the ticket changes a public API endpoint, list known consumers (e.g., Cerebro, demo app, client libraries). Missing consumer list is a Fail.
+
+2. **Migration strategy stated.** For breaking changes, the ticket must describe how consumers will transition — coordinated deploy, feature flag, versioned endpoint, backwards-compatible period, or "consumers updated in same release." Unstated migration for a breaking change is a Fail. Non-breaking changes (additive fields, new endpoints) Pass automatically.
+
+3. **Rollback plan considered.** If the change is hard to reverse (schema migration, enum value added to a DB column, status code change), the ticket should note whether rollback is safe or requires a migration. Missing rollback consideration for irreversible changes is a Flag.
+
+**Check 23 — No silent bug introduction:** Analyze the ticket's proposed changes for potential bugs or failure modes that are not covered by the Acceptance Criteria or Unit Tests. This check requires reading the source code in the Deliverables (or the files being modified) to identify risks. Evaluate these sub-checks:
+
+1. **Race conditions.** If the ticket introduces async operations, concurrent writes, or status transitions, verify that the ticket addresses what happens when two operations overlap (e.g., regenerate while generating, duplicate submissions). Unaddressed race conditions are a Flag.
+
+2. **Orphaned state.** If the ticket creates placeholder or intermediate state (e.g., a row with status "pending" or "generating"), verify that the ticket addresses cleanup when the operation fails, crashes, or times out. Permanent orphaned state with no cleanup mechanism is a Fail.
+
+3. **Data leakage.** If the ticket introduces new statuses, intermediate objects, or placeholder rows, verify that these are filtered from list/query endpoints and not visible to consumers before they're ready. Unfiltered intermediate state in list endpoints is a Flag.
+
+4. **Implicit contract changes.** If the ticket modifies internal behavior that external callers depend on (e.g., changing a synchronous function to async, adding a new required field, changing return semantics), verify that all call sites are updated in the Deliverables. Missing call site updates are a Fail.
+
 For any **Flag** or **Fail**, note the issue and suggested fix — these go in the addendum, not in the checklist table.
 
 **After the checklist:** If `fix_mode` is active AND there are any Flags or Fails, proceed to Step 5b (fix path). Otherwise, proceed to Step 5 (audit path).
