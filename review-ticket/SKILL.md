@@ -135,6 +135,17 @@ source .venv/bin/activate && pip show <package-name>
 
 Record the installed version. Compare against the version constraint in the ticket's deliverables — if the constraint is an open floor (e.g., `>=1.0`), check whether later major versions have breaking API changes. Verify that any class names, method names, or call signatures in the implementation notes exist in the installed version. Record discrepancies for Check 21.
 
+### For tickets that change a public interface (API endpoint, port method, shared model)
+
+If any deliverable modifies a function signature, changes an HTTP status code, alters a response shape, adds/removes enum values, or renames a public class or method, grep for all callers now:
+
+```bash
+# Find all callers of the changed function/endpoint/model
+grep -rn "<function_name>\|<endpoint_path>\|<model_name>" <source-root>
+```
+
+Record every file that references the changed interface. In Check 22, verify that the ticket identifies all consumers and states a migration strategy for breaking changes. In Check 23, verify that all call sites are listed in the Deliverables or explicitly noted as unchanged.
+
 ---
 
 ## Step 4: Run the Checklist
