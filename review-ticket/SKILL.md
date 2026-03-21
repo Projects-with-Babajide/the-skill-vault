@@ -139,7 +139,7 @@ Record the installed version. Compare against the version constraint in the tick
 
 ## Step 4: Run the Checklist
 
-Evaluate all 21 checks. For each, assign exactly one verdict: **Pass**, **Flag**, or **Fail**.
+Evaluate all 23 checks. For each, assign exactly one verdict: **Pass**, **Flag**, or **Fail**.
 
 | # | Check |
 |---|-------|
@@ -164,6 +164,8 @@ Evaluate all 21 checks. For each, assign exactly one verdict: **Pass**, **Flag**
 | 19 | Test patterns followed |
 | 20 | No duplicated utility logic |
 | 21 | SDK version pinned and API verified |
+| 22 | Blast radius documented |
+| 23 | No silent bug introduction |
 
 **Check 4 — No architecture drift:** Evaluate all three sub-checks. Any single sub-check failure is a Fail on Check 4.
 
