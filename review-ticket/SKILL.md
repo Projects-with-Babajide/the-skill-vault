@@ -10,7 +10,7 @@ Invoke with an issue identifier: `/review-ticket ORU-7`
 
 Optional flag: `/review-ticket ORU-7 --fix`
 
-- **Without `--fix`:** Audit-only mode. Run the 21-check checklist, present findings, and append a review addendum to the ticket. Does not modify the ticket description.
+- **Without `--fix`:** Audit-only mode. Run the 23-check checklist, present findings, and append a review addendum to the ticket. Does not modify the ticket description.
 - **With `--fix`:** Audit-and-fix mode. Run the checklist. If any checks fail, research the codebase, rewrite the ticket description to pass all checks, then re-verify. The original ticket goal and scope are preserved — only gaps are filled.
 
 If no identifier is provided, ask the user which ticket to review.
