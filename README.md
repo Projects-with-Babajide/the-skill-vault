@@ -30,6 +30,15 @@ Skills are symlinked from `~/.claude/skills/` into this repo — edits here are 
 
 > Engineering skills require `.claude/skill-config.md` in the project root.
 
+## App Exploration
+
+| Skill | What it does |
+|---|---|
+| `explore-app` | Crawl a web app via Playwright, extract design system, map features, produce ticket or user story plan |
+| `detail-exploration` | Flesh out approved items from an `/explore-app` run into detailed tickets or user stories |
+
+> Requires [Playwright MCP server](https://www.npmjs.com/package/@anthropic-ai/mcp-server-playwright). Optionally reads `.claude/skill-config.md` for project-specific settings.
+
 ## Productivity
 
 | Skill | What it does |
