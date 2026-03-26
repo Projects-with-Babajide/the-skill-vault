@@ -357,7 +357,13 @@ Combine all agent outputs into a single `{output_dir}/EXPLORATION_REPORT.md` wit
 {Notable findings, gaps, surprises}
 ```
 
-### Step 3.2: Generate Ticket Plan
+### Step 3.2: Generate Plan
+
+The output depends on the **output mode** setting.
+
+---
+
+#### Mode: `tickets` (default)
 
 From the feature map, generate a ticket plan table. Group tickets logically:
 
@@ -378,7 +384,6 @@ Review the list below. Mark which tickets to proceed with by responding with the
 | ID | Title | Description | Complexity |
 |----|-------|-------------|------------|
 | {prefix}-03 | {Page/Feature Name} | {One-line description of what this ticket covers} | Low/Medium/High |
-| ... | ... | ... | ... |
 
 ## Design System
 | ID | Title | Description | Complexity |
@@ -401,6 +406,47 @@ Review the list below. Mark which tickets to proceed with by responding with the
 - **High:** Complex interactions (AI generation, real-time updates, multi-step flows), many sub-states
 
 Save the ticket plan to `{output_dir}/TICKET_PLAN.md`.
+
+---
+
+#### Mode: `user-stories`
+
+From the feature map, generate a user story plan organized by user persona and workflow. Group stories by the value they deliver, not by screen:
+
+```markdown
+# User Story Plan
+
+{N} user stories extracted from exploration of {url}.
+
+Review the list below. Mark which stories to detail (e.g., "proceed with US-01 through US-05, skip US-06").
+You can also suggest different groupings or priorities.
+
+## {Persona / Workflow Area}
+| ID | User Story (As a... I want to... So that...) | Priority | Screens Involved |
+|----|-----------------------------------------------|----------|------------------|
+| US-01 | As a sales rep, I want to see all my companies at a glance so that I can prioritize follow-ups | High | /companies |
+| US-02 | As a sales rep, I want to view AI-extracted pain points from calls so that I can tailor my pitch | High | /companies/{slug} (Pain Points tab) |
+| US-03 | As a sales manager, I want to review upcoming meetings across all reps so that I can prepare coaching notes | Medium | /meetings (Upcoming tab) |
+
+## Cross-Cutting Concerns
+| ID | Story | Priority | Notes |
+|----|-------|----------|-------|
+| US-XX | As a user, I want consistent navigation so that I can move between sections without confusion | High | Global layout, sidebar, breadcrumbs |
+```
+
+**User story grouping rules:**
+- Group by user persona or workflow area, not by page
+- One story per distinct user goal (a story can span multiple screens)
+- Cross-cutting concerns (navigation, design consistency, auth) get their own section
+- AI-powered features are called out explicitly with what the AI does vs what the user validates
+- Each story notes which screens are involved (for traceability to the exploration)
+
+**Priority estimation:**
+- **High:** Core workflow, used frequently, blocks other features
+- **Medium:** Important but not blocking, enhances existing workflow
+- **Low:** Nice-to-have, edge case, or polish
+
+Save the story plan to `{output_dir}/STORY_PLAN.md`.
 
 ### Step 3.3: Present to User
 
