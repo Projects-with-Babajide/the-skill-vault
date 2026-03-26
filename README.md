@@ -43,5 +43,4 @@ Skills are symlinked from `~/.claude/skills/` into this repo — edits here are 
 
 | Skill | What it does |
 |---|---|
-| `log-meeting-to-notion` | Log meeting notes to Notion (from Granola or raw paste) |
 | `reddit-read` | Read subreddits, threads, and search Reddit posts |
