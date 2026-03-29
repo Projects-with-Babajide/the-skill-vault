@@ -317,15 +317,17 @@ Present findings to the user in a structured format:
 - <check-name>: Timed out — this is a CI infrastructure issue, not a code problem. Consider re-running.
 ```
 
-End with: **"Should I apply these fixes?"**
+End with: **"Should I apply these fixes?"** (Skip this prompt if `--auto` is active.)
 
-For infrastructure issues, offer: **"Should I re-run the failed checks?"** (using `gh run rerun <run-id> --failed`)
+For infrastructure issues, offer: **"Should I re-run the failed checks?"** (Skip this prompt if `--auto` is active — just re-run them.)
 
 ---
 
 ## Step 7: Wait for User Approval
 
-IMPORTANT: Do NOT apply any fixes without explicit user approval.
+**If `--auto` is active:** SKIP this step entirely. Proceed directly to Step 8 and apply all proposed fixes. For infrastructure issues, auto-rerun failed checks with `gh run rerun <run-id> --failed` and go back to Step 4.
+
+**Otherwise:** Do NOT apply any fixes without explicit user approval.
 
 The user may:
 - Approve all fixes — proceed to Step 8
@@ -337,6 +339,8 @@ The user may:
 ---
 
 ## Step 8: Apply Fixes and Push
+
+**If `--auto` is active:** Apply ALL proposed fixes from Step 6. Do not wait for confirmation.
 
 1. Apply the approved fixes following all project conventions from `CLAUDE.md`.
 2. Make minimal changes — do not refactor unrelated code.
