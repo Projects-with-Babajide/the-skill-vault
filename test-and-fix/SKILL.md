@@ -139,13 +139,15 @@ Present the fix plan to the user as a structured summary:
 ### Failure 2: ...
 ```
 
-End with: **"Should I apply these fixes?"**
+End with: **"Should I apply these fixes?"** (Skip this prompt if `--auto` is active.)
 
 ---
 
 ## Step 6: Wait for User Approval
 
-IMPORTANT: Do NOT apply any fixes without user confirmation. Wait for the user to:
+**If `--auto` is active:** SKIP this step entirely. Proceed directly to Step 7 and apply all proposed fixes.
+
+**Otherwise:** Do NOT apply any fixes without user confirmation. Wait for the user to:
 - Agree to all fixes ("yes", "go ahead", "apply them")
 - Agree to specific fixes ("fix 1 and 3, skip 2")
 - Reject fixes ("no", "I'll handle it")
@@ -157,7 +159,11 @@ If the user provides alternative direction, adjust the plan accordingly.
 
 ## Step 7: Apply Fixes
 
-Apply only the approved fixes. For each fix:
+**If `--auto` is active:** Apply ALL proposed fixes from Step 5. Do not wait for confirmation.
+
+**Otherwise:** Apply only the approved fixes.
+
+For each fix:
 1. Read the file to be modified
 2. Make the minimal change needed — do not refactor surrounding code
 3. Follow all project conventions from `CLAUDE.md`
