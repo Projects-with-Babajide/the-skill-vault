@@ -234,6 +234,16 @@ This also applies to `Field()` constraint parameters — if a canonical location
 
 4. **Implicit contract changes.** If the ticket modifies internal behavior that external callers depend on (e.g., changing a synchronous function to async, adding a new required field, changing return semantics), verify that all call sites are updated in the Deliverables. Missing call site updates are a Fail.
 
+**Check 24 — No built-in service alternative:** Applies only to tickets that write custom code to handle a workflow for an external service (Clerk, Knock, Supabase, Stripe, etc.). Skip with Pass if the ticket does not integrate with an external service or only uses standard CRUD operations against an API.
+
+Use the Step 3b research results. Evaluate:
+
+1. **Built-in feature exists and fully covers the requirement.** The service provides a dashboard toggle, native configuration, or automatic behavior that accomplishes the same goal as the ticket's custom code — with no gaps. Custom code is unnecessary and adds a maintenance burden. This is a **Fail**. The suggested fix is to use the built-in feature and remove or reduce the custom code.
+
+2. **Built-in feature exists but only partially covers the requirement.** The service has a native feature but the ticket needs additional logic beyond what the built-in provides (e.g., the built-in creates the resource but doesn't set custom metadata the app needs). This is a **Flag**. Note what the built-in covers and what gap the custom code fills — the ticket should document why the built-in is insufficient.
+
+3. **No built-in feature exists.** The service does not provide native support for this workflow — custom code is the correct approach. **Pass**.
+
 For any **Flag** or **Fail**, note the issue and suggested fix — these go in the addendum, not in the checklist table.
 
 **After the checklist:** If `fix_mode` is active AND there are any Flags or Fails, proceed to Step 5b (fix path). Otherwise, proceed to Step 5 (audit path).
