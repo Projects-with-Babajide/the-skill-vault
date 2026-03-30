@@ -503,7 +503,7 @@ Show a compact summary:
 ```
 **<TICKET-ID> — <title>**
 Verdict: Good to go (after fix)
-Results: <N> Pass · <N> Flag · <N> Fail (before fix) → 23 Pass (after fix)
+Results: <N> Pass · <N> Flag · <N> Fail (before fix) → 24 Pass (after fix)
 
 Sections added: <count>
 Key decisions resolved: <count>
