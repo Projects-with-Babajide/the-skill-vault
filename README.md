@@ -1,6 +1,8 @@
-# the-skill-vault
+# The Skill Vault
 
-Claude Code skills for Babajide's personal workflow. These are invoked by Claude Code as slash commands (e.g. `/ship-chore`, `/linkedin-feed`).
+Reusable Claude Code skills for engineering workflows, app exploration, LinkedIn automation, and productivity. These are invoked as slash commands (e.g. `/ship-chore`, `/linkedin-feed`) inside Claude Code.
+
+Built and maintained by [Disposable by Default](https://disposablebydefault.ai).
 
 Skills are symlinked from `~/.claude/skills/` into this repo — edits here are live immediately.
 
@@ -44,3 +46,20 @@ Skills are symlinked from `~/.claude/skills/` into this repo — edits here are 
 | Skill | What it does |
 |---|---|
 | `reddit-read` | Read subreddits, threads, and search Reddit posts |
+
+---
+
+## Usage
+
+1. Clone this repo
+2. Symlink the skills you want into `~/.claude/skills/`
+3. Open Claude Code and use them as slash commands
+
+```bash
+# Example: symlink the linkedin-search skill
+ln -s /path/to/the-skill-vault/linkedin-search ~/.claude/skills/linkedin-search
+```
+
+## License
+
+MIT — use these skills however you want. If you build something cool with them, [let us know](https://disposablebydefault.ai).
